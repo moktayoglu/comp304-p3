@@ -110,7 +110,7 @@ int main(int argc, const char *argv[])
   }
   
   for (i = 0; i < FRAMES; i++) {
-    LRU_CLOCK_COUNTER[i] = 999999999;
+    LRU_CLOCK_COUNTER[i] = 9999999;
   }
   
   
@@ -123,6 +123,7 @@ int main(int argc, const char *argv[])
   int page_faults = 0;
   int curr_fifo_frame = 0;
   int curr_lru_frame = 0;
+  int filled_page = 0;
   
   // Number of the next unallocated physical page in main memory
   unsigned char free_page = 0;
@@ -153,47 +154,60 @@ int main(int argc, const char *argv[])
       {
 	
         page_faults++; 
-       
-	if (!isLRU){//FIFO
-		
+       	
+	if (isLRU==0){//FIFO
+		if(filled_page < FRAMES) {
+              		physical_page = filled_page;
+              		filled_page++;  
+              		//printf("free frame %d\n", filled_page);
+            	}else{ 
         	physical_page = curr_fifo_frame; 
         	curr_fifo_frame++;
 		curr_fifo_frame = curr_fifo_frame % FRAMES;
 
-        	
+        	for(int i=0; i<PAGES; i++) {
+        	//remove from the current table if we chose a victim
+		  if(pagetable[i] == curr_fifo_frame) {  
+		        pagetable[i] = -1;
+		  }
+       		}
+       		}
 
 	}else{ //LRU
-	
-		if(free_page < FRAMES) {
-              		physical_page = free_page;
-              		free_page++;  
+		
+		//first we fill all available slots
+		if(filled_page < FRAMES) {
+              		physical_page = filled_page;
+              		filled_page++;  
+              		
+              		
             	}else{ 
-			int min = 999999;
-			int lru_frame = -1;
-			for (int i=0; i<FRAMES; i++){ 
-				if (LRU_CLOCK_COUNTER[i] < min){
-					min = LRU_CLOCK_COUNTER[i];
-					lru_frame = i;
-				}
+            
+		   int min = 999999999;
+		   int lru_frame = 0;
+		   for (int i=0; i<FRAMES; i++){ 
+			 if (LRU_CLOCK_COUNTER[i] < min){
+				min = LRU_CLOCK_COUNTER[i];
+				lru_frame = i;
 			}
+		    }
 			
-			physical_page = lru_frame;
+		    for(int i=0; i<PAGES; i++) {
+		    //remove from the current table if we chose a victim
+		  	if(pagetable[i] == lru_frame) {  
+		        	pagetable[i] = -1;
+		         }
+       		     }
+		     physical_page = lru_frame;
+			
 		}
+		LRU_CLOCK_COUNTER[physical_page] = clock;
 		
 	}
 	
-	for(int i=0; i<PAGES; i++) {
-        	//remove from table if current frame was full
-          	if(pagetable[i] == physical_page) {  
-                	pagetable[i] = -1;
-          	}
-        }
-
+	
         pagetable[logical_page] = physical_page;
-        //update clock in each entry
-        
-      	LRU_CLOCK_COUNTER[physical_page] = clock;
-        
+     
         //copy backing into memory, with equivalent page and frame range
         memcpy(main_memory + physical_page * PAGE_SIZE, backing +  logical_page * PAGE_SIZE, PAGE_SIZE);
         
