@@ -10,11 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TLB_SIZE 10
+#define TLB_SIZE 16
 #define PAGES 1024
 #define PAGE_MASK 0b11111111110000000000
-
-
 
 #define PAGE_SIZE 1024
 #define OFFSET_BITS 10
@@ -70,7 +68,13 @@ int search_tlb(unsigned char logical_page) {
 /* Adds the specified mapping to the TLB, replacing the oldest mapping (FIFO replacement). */
 void add_to_tlb(unsigned char logical, unsigned char physical) {
     /* TODO */
+   tlb[tlbindex].logical = logical;
+   tlb[tlbindex].physical = physical;
    
+   tlbindex += 1;
+   
+   //For circular replacement of first come, first out 
+   tlbindex = tlbindex % TLB_SIZE;
 }
 
 
@@ -131,12 +135,15 @@ int main(int argc, const char *argv[])
       if (physical_page == -1)
       {
 
-        page_faults++;  //page fault occured
+        page_faults++;  
 
-        physical_page = free_page; //physical page becomes the next free page
-        free_page++; //index incremented
+        physical_page = free_page; 
+        free_page++;
 
-        pagetable[logical_page] = physical_page; //conversion
+        pagetable[logical_page] = physical_page;
+        
+        //copy backing into memory, with equivalent page and frame range
+        memcpy(main_memory + physical_page * PAGE_SIZE, backing +  logical_page * PAGE_SIZE, PAGE_SIZE);
         
       }
 
@@ -146,7 +153,7 @@ int main(int argc, const char *argv[])
     signed char value = main_memory[physical_page * PAGE_SIZE + offset];
     
     printf("Virtual address: %d Physical address: %d Value: %d\n", logical_address, physical_address, value);
-    printf("logical: %d offset: %d page: %d \n", logical_address, offset, logical_page);
+    //printf("logical: %d offset: %d page: %d \n", logical_address, offset, logical_page);
 
   }
   
