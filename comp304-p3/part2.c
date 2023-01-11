@@ -82,8 +82,8 @@ void add_to_tlb(unsigned char logical, unsigned char physical) {
 
 int main(int argc, const char *argv[])
 {
-  if (argc != 3) {
-    fprintf(stderr, "Usage ./virtmem backingstore input\n");
+  if ((argc != 5) || (strcmp(argv[3], "-p") != 0)){
+    fprintf(stderr, "Usage ./virtmem backingstore input -p [0-1]\n");
     exit(1);
   }
   
@@ -94,7 +94,8 @@ int main(int argc, const char *argv[])
   const char *input_filename = argv[2];
   FILE *input_fp = fopen(input_filename, "r");
 
-  int rp = atoi(argv[4]);
+  //LRU or FIFO
+  int isLRU = atoi(argv[4]);
   
   // Fill page table entries with -1 for initially empty table.
   int i;
