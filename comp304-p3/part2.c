@@ -159,18 +159,22 @@ int main(int argc, const char *argv[])
 		if(filled_page < FRAMES) {
               		physical_page = filled_page;
               		filled_page++;  
-              		//printf("free frame %d\n", filled_page);
+              		
             	}else{ 
         	physical_page = curr_fifo_frame; 
-        	curr_fifo_frame++;
-		curr_fifo_frame = curr_fifo_frame % FRAMES;
+        	
 
         	for(int i=0; i<PAGES; i++) {
         	//remove from the current table if we chose a victim
 		  if(pagetable[i] == curr_fifo_frame) {  
 		        pagetable[i] = -1;
+		        
 		  }
        		}
+       		
+       		curr_fifo_frame++;
+		curr_fifo_frame = curr_fifo_frame % FRAMES;
+
        		}
 
 	}else{ //LRU
