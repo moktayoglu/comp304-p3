@@ -42,7 +42,9 @@ int pagetable[PAGES];
 // updated with new size
 signed char main_memory[PHYSIC_MEMORY_SIZE]; 
 
-
+// LRU clock keepers
+int LRU_CLOCK_COUNTER[FRAMES];
+int clock = 0;
 
 // Pointer to memory mapped backing file
 signed char *backing;
@@ -107,6 +109,11 @@ int main(int argc, const char *argv[])
     pagetable[i] = -1;
   }
   
+  for (i = 0; i < FRAMES; i++) {
+    LRU_CLOCK_COUNTER[i] = 999999999;
+  }
+  
+  
   // Character buffer for reading lines of input file.
   char buffer[BUFFER_SIZE];
   
@@ -115,12 +122,14 @@ int main(int argc, const char *argv[])
   int tlb_hits = 0;
   int page_faults = 0;
   int curr_fifo_frame = 0;
+  int curr_lru_frame = 0;
   
   // Number of the next unallocated physical page in main memory
   unsigned char free_page = 0;
   
   while (fgets(buffer, BUFFER_SIZE, input_fp) != NULL) {
     total_addresses++;
+    clock++;
     int logical_address = atoi(buffer);
 
     /* TODO 
@@ -133,7 +142,9 @@ int main(int argc, const char *argv[])
     // TLB hit
     if (physical_page != -1) {
       tlb_hits++;
-      // TLB miss
+      //update each accession the clock
+      LRU_CLOCK_COUNTER[physical_page] = clock;
+      
     } else {
       physical_page = pagetable[logical_page];
       
@@ -144,24 +155,44 @@ int main(int argc, const char *argv[])
         page_faults++; 
        
 	if (!isLRU){//FIFO
-
-        	physical_page = curr_fifo_frame;
+		
+        	physical_page = curr_fifo_frame; 
         	curr_fifo_frame++;
 		curr_fifo_frame = curr_fifo_frame % FRAMES;
 
-        	for(int i=0; i<PAGES; i++) {
-          	if(pagetable[i] == curr_fifo_frame) {  
-                	pagetable[i] = -1;
-          	}
-        	}
+        	
 
-	}else{//LRU 
+	}else{ //LRU
 	
-	
+		if(free_page < FRAMES) {
+              		physical_page = free_page;
+              		free_page++;  
+            	}else{ 
+			int min = 999999;
+			int lru_frame = -1;
+			for (int i=0; i<FRAMES; i++){ 
+				if (LRU_CLOCK_COUNTER[i] < min){
+					min = LRU_CLOCK_COUNTER[i];
+					lru_frame = i;
+				}
+			}
+			
+			physical_page = lru_frame;
+		}
+		
 	}
 	
+	for(int i=0; i<PAGES; i++) {
+        	//remove from table if current frame was full
+          	if(pagetable[i] == physical_page) {  
+                	pagetable[i] = -1;
+          	}
+        }
 
         pagetable[logical_page] = physical_page;
+        //update clock in each entry
+        
+      	LRU_CLOCK_COUNTER[physical_page] = clock;
         
         //copy backing into memory, with equivalent page and frame range
         memcpy(main_memory + physical_page * PAGE_SIZE, backing +  logical_page * PAGE_SIZE, PAGE_SIZE);
@@ -174,7 +205,7 @@ int main(int argc, const char *argv[])
     signed char value = main_memory[physical_page * PAGE_SIZE + offset];
     
     printf("Virtual address: %d Physical address: %d Value: %d\n", logical_address, physical_address, value);
-    //printf("logical: %d offset: %d page: %d \n", logical_address, offset, logical_page);
+    //printf("clock: %d frame: %d \n", LRU_CLOCK_COUNTER[physical_page], physical_page);
 
   }
   
