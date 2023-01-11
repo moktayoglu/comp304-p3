@@ -12,11 +12,11 @@
 
 #define TLB_SIZE 16
 #define PAGES 1024
-#define PAGE_MASK /* TODO */
+#define PAGE_MASK 0b11111111110000000000
 
 #define PAGE_SIZE 1024
 #define OFFSET_BITS 10
-#define OFFSET_MASK /* TODO */
+#define OFFSET_MASK 0b00000000001111111111
 
 #define MEMORY_SIZE PAGES * PAGE_SIZE
 
@@ -51,6 +51,7 @@ int max(int a, int b)
 /* Returns the physical address from TLB or -1 if not present. */
 int search_tlb(unsigned char logical_page) {
     /* TODO */
+    return -1;
 }
 
 /* Adds the specified mapping to the TLB, replacing the oldest mapping (FIFO replacement). */
@@ -95,10 +96,10 @@ int main(int argc, const char *argv[])
 
     /* TODO 
     / Calculate the page offset and logical page number from logical_address */
-    int offset =
-    int logical_page =
+    int offset = (logical_address & OFFSET_MASK) ;
+    int logical_page =(logical_address & PAGE_MASK) >> 10;
     ///////
-    
+    /*
     int physical_page = search_tlb(logical_page);
     // TLB hit
     if (physical_page != -1) {
@@ -109,7 +110,7 @@ int main(int argc, const char *argv[])
       
       // Page fault
       if (physical_page == -1) {
-          /* TODO */
+           //TODO 
       }
 
       add_to_tlb(logical_page, physical_page);
@@ -118,7 +119,9 @@ int main(int argc, const char *argv[])
     int physical_address = (physical_page << OFFSET_BITS) | offset;
     signed char value = main_memory[physical_page * PAGE_SIZE + offset];
     
-    printf("Virtual address: %d Physical address: %d Value: %d\n", logical_address, physical_address, value);
+    printf("Virtual address: %d Physical address: %d Value: %d\n", logical_address, physical_address, value);*/
+    
+    //printf("logical: %d, offset: %d, page: %d\n", logical_address, offset, logical_page);
   }
   
   printf("Number of Translated Addresses = %d\n", total_addresses);
