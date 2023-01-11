@@ -139,6 +139,7 @@ int main(int argc, const char *argv[])
 
         physical_page = free_page;  //select new space to fill
         free_page++;
+        free_page = free_page % PAGES;
 
         pagetable[logical_page] = physical_page;
         
