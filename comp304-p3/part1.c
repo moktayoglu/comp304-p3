@@ -2,6 +2,8 @@
  * virtmem.c 
  */
 
+//VM and PM with same size
+
 #include <stdio.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -83,7 +85,7 @@ void add_to_tlb(unsigned char logical, unsigned char physical) {
 int main(int argc, const char *argv[])
 {
   if (argc != 3) {
-    fprintf(stderr, "Usage ./virtmem backingstore input\n");
+    fprintf(stderr, "Usage ./virtmem store input\n");
     exit(1);
   }
   
