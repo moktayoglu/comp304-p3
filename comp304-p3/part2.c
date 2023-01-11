@@ -2,6 +2,9 @@
  * virtmem.c 
  */
 
+
+//VM is larger than PM
+
 #include <stdio.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -17,6 +20,7 @@
 #define PAGE_SIZE 1024
 #define OFFSET_BITS 10
 #define OFFSET_MASK 0b00000000001111111111
+#define FRAMES 256  //using 256 page frames as instructed
 
 #define MEMORY_SIZE PAGES * PAGE_SIZE
 
@@ -86,16 +90,22 @@ int main(int argc, const char *argv[])
     fprintf(stderr, "Usage ./virtmem backingstore input -p [0-1]\n");
     exit(1);
   }
-  
+
+ //LRU or FIFO
+  int isLRU;
+  isLRU= atoi(argv[4]); //calling using "./part2 BACKING_STORE.bin addresses.txt -p 0 "
+
+  if(isLRU == 0) { //FIFO
+
   const char *backing_filename = argv[1]; 
-  int backing_fd = open(backing_filename, O_RDONLY);
+  int backing_fd = open(backing_filename, O_RDONLY);            
   backing = mmap(0, MEMORY_SIZE, PROT_READ, MAP_PRIVATE, backing_fd, 0); 
+
+  FILE *backing_f = fopen(argv[1], "rb");
   
   const char *input_filename = argv[2];
   FILE *input_fp = fopen(input_filename, "r");
 
-  //LRU or FIFO
-  int isLRU = atoi(argv[4]);
   
   // Fill page table entries with -1 for initially empty table.
   int i;
@@ -141,6 +151,17 @@ int main(int argc, const char *argv[])
         physical_page = free_page; 
         free_page++;
 
+        if(free_page == FRAMES) {   // reaching to the end
+              free_page = 0;
+        }
+
+        for(int i=0; i<PAGES; i++) {
+            if(pagetable[i] == physical_page) {  // deleting the old page
+                pagetable[i] = -1;
+            }
+        }
+
+
         pagetable[logical_page] = physical_page;
         
         //copy backing into memory, with equivalent page and frame range
@@ -164,5 +185,7 @@ int main(int argc, const char *argv[])
   printf("TLB Hits = %d\n", tlb_hits);
   printf("TLB Hit Rate = %.3f\n", tlb_hits / (1. * total_addresses));
   
-  return 0;
+  //return 0;
+  }
+  
 }
